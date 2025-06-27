@@ -76,83 +76,6 @@ make -j$(nproc)
 make install
 cd "$DEPS_DIR"
 
-# Try building ucode first (dependency for udebug)
-if [ ! -d "ucode" ]; then
-    echo "Downloading ucode..."
-    git clone https://github.com/openwrt/ucode.git
-    cd ucode
-    # Remove unnecessary components
-    rm -rf tests examples lua
-    # Patch CMakeLists.txt to remove references to examples and lua
-    if [ -f "CMakeLists.txt" ]; then
-        cp CMakeLists.txt CMakeLists.txt.bak
-        grep -v "ADD_SUBDIRECTORY(examples)" CMakeLists.txt.bak | \
-        grep -v "ADD_SUBDIRECTORY(lua)" | \
-        grep -v "add_subdirectory(examples)" | \
-        grep -v "add_subdirectory(lua)" > CMakeLists.txt || cp CMakeLists.txt.bak CMakeLists.txt
-    fi
-    cd ..
-fi
-
-echo "Building ucode..."
-cd ucode
-mkdir -p build
-cd build
-if cmake .. -DCMAKE_INSTALL_PREFIX="$DEPS_DIR/install" \
-            -DCMAKE_C_FLAGS="$CFLAGS" \
-            -DBUILD_STATIC=OFF \
-            -DBUILD_SHARED_LIBS=ON; then
-    make -j$(nproc)
-    make install
-    echo "ucode built successfully"
-    UCODE_AVAILABLE=1
-else
-    echo "ucode build failed, will try to build without udebug"
-    UCODE_AVAILABLE=0
-fi
-cd "$DEPS_DIR"
-
-# Download and build udebug (OpenWrt debug library) - only if ucode is available
-if [ "$UCODE_AVAILABLE" = "1" ]; then
-    if [ ! -d "udebug" ]; then
-        echo "Downloading udebug..."
-        git clone https://github.com/openwrt/udebug.git
-        cd udebug
-        # Remove unnecessary components
-        rm -rf tests examples lua
-        # Patch CMakeLists.txt to remove references to examples and lua
-        if [ -f "CMakeLists.txt" ]; then
-            cp CMakeLists.txt CMakeLists.txt.bak
-            grep -v "ADD_SUBDIRECTORY(examples)" CMakeLists.txt.bak | \
-            grep -v "ADD_SUBDIRECTORY(lua)" | \
-            grep -v "add_subdirectory(examples)" | \
-            grep -v "add_subdirectory(lua)" > CMakeLists.txt || cp CMakeLists.txt.bak CMakeLists.txt
-        fi
-        cd ..
-    fi
-
-    echo "Building udebug..."
-    cd udebug
-    mkdir -p build
-    cd build
-    if cmake .. -DCMAKE_INSTALL_PREFIX="$DEPS_DIR/install" \
-                -DCMAKE_C_FLAGS="$CFLAGS" \
-                -DBUILD_STATIC=OFF \
-                -DBUILD_SHARED_LIBS=ON; then
-        make -j$(nproc)
-        make install
-        echo "udebug built successfully"
-        UDEBUG_AVAILABLE=1
-    else
-        echo "udebug build failed, will build without it"
-        UDEBUG_AVAILABLE=0
-    fi
-    cd "$DEPS_DIR"
-else
-    echo "Skipping udebug build since ucode is not available"
-    UDEBUG_AVAILABLE=0
-fi
-
 # Go back to source directory
 cd ..
 
@@ -197,19 +120,10 @@ echo "Compiling fuzzer..."
 $CC $CFLAGS -c mdnsd-fuzz.c -o mdnsd-fuzz.o
 
 echo "Linking fuzzer..."
-# Link the fuzzer with all components and required libraries
-# Build library list based on what's available
-LINK_LIBS="-lubox -lubus -lblobmsg_json -ljson-c -lresolv"
-if [ "$UDEBUG_AVAILABLE" = "1" ]; then
-    LINK_LIBS="$LINK_LIBS -ludebug"
-    echo "Including udebug in link"
-else
-    echo "Building without udebug"
-fi
-
+# Link the fuzzer with all components and required libraries (without udebug)
 $CC $CFLAGS $LIB_FUZZING_ENGINE mdnsd-fuzz.o \
     "${OBJECT_FILES[@]}" \
-    $LDFLAGS $LINK_LIBS \
+    $LDFLAGS -lubox -lubus -lblobmsg_json -ljson-c -lresolv \
     -o $OUT/mdnsd_fuzzer
 
 # Set correct rpath for OSS-Fuzz
@@ -230,17 +144,6 @@ for lib in libubox.so libubus.so libblobmsg_json.so; do
         echo "Copied $lib"
     fi
 done
-
-# Copy optional libraries if they exist
-if [ "$UCODE_AVAILABLE" = "1" ] && [ -f "$DEPS_DIR/install/lib/libucode.so" ]; then
-    cp "$DEPS_DIR/install/lib/libucode.so"* "$OUT/lib/" 2>/dev/null || true
-    echo "Copied libucode.so"
-fi
-
-if [ "$UDEBUG_AVAILABLE" = "1" ] && [ -f "$DEPS_DIR/install/lib/libudebug.so" ]; then
-    cp "$DEPS_DIR/install/lib/libudebug.so"* "$OUT/lib/" 2>/dev/null || true
-    echo "Copied libudebug.so"
-fi
 
 # Copy other dependencies
 copy_library_deps() {
@@ -270,7 +173,6 @@ copy_library_deps() {
 
 copy_library_deps "$OUT/mdnsd_fuzzer" "$OUT/lib"
 
-
 echo "Verifying fuzzer binary..."
 if [ -f "$OUT/mdnsd_fuzzer" ]; then
     echo "Fuzzer binary created successfully"
@@ -287,11 +189,8 @@ if [ -f "$OUT/mdnsd_fuzzer" ]; then
     echo "Libraries in $OUT/lib:"
     ls -la $OUT/lib/ 2>/dev/null || echo "No additional libraries"
     
-    echo "Seed corpus files:"
-    ls -la $OUT/mdnsd_fuzzer_seed_corpus/ 2>/dev/null || echo "No seed corpus"
-    
 else
-    echo  "Failed to create fuzzer binary!"
+    echo "Failed to create fuzzer binary!"
     exit 1
 fi
 
@@ -301,4 +200,3 @@ rm -f *.o
 
 echo "mdnsd fuzzer build completed successfully!"
 echo "Fuzzer: $OUT/mdnsd_fuzzer"
-echo "Seed corpus: $OUT/mdnsd_fuzzer_seed_corpus"
