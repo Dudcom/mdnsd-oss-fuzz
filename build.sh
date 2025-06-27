@@ -20,8 +20,13 @@ if [ ! -d "libubox" ]; then
     # Remove unnecessary components to avoid CMake errors
     rm -rf tests examples lua
     # Patch CMakeLists.txt to remove references to examples and lua
-    sed -i '/ADD_SUBDIRECTORY(examples)/d' CMakeLists.txt 2>/dev/null || true
-    sed -i '/ADD_SUBDIRECTORY(lua)/d' CMakeLists.txt 2>/dev/null || true
+    if [ -f "CMakeLists.txt" ]; then
+        cp CMakeLists.txt CMakeLists.txt.bak
+        grep -v "ADD_SUBDIRECTORY(examples)" CMakeLists.txt.bak | \
+        grep -v "ADD_SUBDIRECTORY(lua)" | \
+        grep -v "add_subdirectory(examples)" | \
+        grep -v "add_subdirectory(lua)" > CMakeLists.txt || cp CMakeLists.txt.bak CMakeLists.txt
+    fi
     cd ..
 fi
 
@@ -46,6 +51,14 @@ if [ ! -d "ubus" ]; then
     cd ubus
     # Remove unnecessary components
     rm -rf tests examples lua
+    # Patch CMakeLists.txt to remove references to examples and lua
+    if [ -f "CMakeLists.txt" ]; then
+        cp CMakeLists.txt CMakeLists.txt.bak
+        grep -v "ADD_SUBDIRECTORY(examples)" CMakeLists.txt.bak | \
+        grep -v "ADD_SUBDIRECTORY(lua)" | \
+        grep -v "add_subdirectory(examples)" | \
+        grep -v "add_subdirectory(lua)" > CMakeLists.txt || cp CMakeLists.txt.bak CMakeLists.txt
+    fi
     cd ..
 fi
 
@@ -68,6 +81,16 @@ if [ ! -d "udebug" ]; then
     echo "Downloading udebug..."
     git clone https://github.com/openwrt/udebug.git
     cd udebug
+    # Remove unnecessary components
+    rm -rf tests examples lua
+    # Patch CMakeLists.txt to remove references to examples and lua
+    if [ -f "CMakeLists.txt" ]; then
+        cp CMakeLists.txt CMakeLists.txt.bak
+        grep -v "ADD_SUBDIRECTORY(examples)" CMakeLists.txt.bak | \
+        grep -v "ADD_SUBDIRECTORY(lua)" | \
+        grep -v "add_subdirectory(examples)" | \
+        grep -v "add_subdirectory(lua)" > CMakeLists.txt || cp CMakeLists.txt.bak CMakeLists.txt
+    fi
     cd ..
 fi
 
