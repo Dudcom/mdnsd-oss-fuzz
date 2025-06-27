@@ -76,6 +76,39 @@ make -j$(nproc)
 make install
 cd "$DEPS_DIR"
 
+# Download and build udebug (required by ubus.h in mdnsd)
+if [ ! -d "udebug" ]; then
+    echo "Downloading udebug..."
+    git clone https://github.com/openwrt/udebug.git
+    cd udebug
+    # Remove unnecessary components and ucode-related files
+    rm -rf tests examples lua
+    rm -f lib-ucode.c  # Remove ucode support to avoid dependency
+    # Patch CMakeLists.txt to remove ucode references and examples/lua
+    if [ -f "CMakeLists.txt" ]; then
+        cp CMakeLists.txt CMakeLists.txt.bak
+        grep -v "ADD_SUBDIRECTORY(examples)" CMakeLists.txt.bak | \
+        grep -v "ADD_SUBDIRECTORY(lua)" | \
+        grep -v "add_subdirectory(examples)" | \
+        grep -v "add_subdirectory(lua)" | \
+        grep -v "lib-ucode.c" | \
+        grep -v "ucode" > CMakeLists.txt || cp CMakeLists.txt.bak CMakeLists.txt
+    fi
+    cd ..
+fi
+
+echo "Building udebug..."
+cd udebug
+mkdir -p build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX="$DEPS_DIR/install" \
+         -DCMAKE_C_FLAGS="$CFLAGS" \
+         -DBUILD_STATIC=OFF \
+         -DBUILD_SHARED_LIBS=ON
+make -j$(nproc)
+make install
+cd "$DEPS_DIR"
+
 # Go back to source directory
 cd ..
 
@@ -120,10 +153,10 @@ echo "Compiling fuzzer..."
 $CC $CFLAGS -c mdnsd-fuzz.c -o mdnsd-fuzz.o
 
 echo "Linking fuzzer..."
-# Link the fuzzer with all components and required libraries (without udebug)
+# Link the fuzzer with all components and required libraries
 $CC $CFLAGS $LIB_FUZZING_ENGINE mdnsd-fuzz.o \
     "${OBJECT_FILES[@]}" \
-    $LDFLAGS -lubox -lubus -lblobmsg_json -ljson-c -lresolv \
+    $LDFLAGS -lubox -lubus -lblobmsg_json -ljson-c -ludebug -lresolv \
     -o $OUT/mdnsd_fuzzer
 
 # Set correct rpath for OSS-Fuzz
@@ -138,7 +171,7 @@ mkdir -p "$OUT/lib"
 
 # Copy libraries from our custom installation
 echo "Copying libraries from custom installation..."
-for lib in libubox.so libubus.so libblobmsg_json.so; do
+for lib in libubox.so libubus.so libblobmsg_json.so libudebug.so; do
     if [ -f "$DEPS_DIR/install/lib/$lib" ]; then
         cp "$DEPS_DIR/install/lib/$lib"* "$OUT/lib/" 2>/dev/null || true
         echo "Copied $lib"
