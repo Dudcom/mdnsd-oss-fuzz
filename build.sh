@@ -258,6 +258,7 @@ SOURCE_FILES=(
     "util.c"
     "ubus.c"
     "announce.c"
+    "fuzzer-support.c"
 )
 
 # Compile individual source files

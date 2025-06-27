@@ -71,8 +71,6 @@ static void setup_ipv6_sockaddr(struct sockaddr_in6 *addr, uint16_t port) {
 }
 
 static void fuzz_dns_handle_packet_comprehensive(uint8_t *input, size_t size) {
-    struct cache_service *s, *t;
-    
     // Initialize cache
     cache_init();
     
@@ -178,9 +176,8 @@ static void fuzz_dns_handle_packet_comprehensive(uint8_t *input, size_t size) {
     }
     
 cleanup:
-    // Clean up cache services
-    avl_for_each_element_safe(&services, s, avl, t)
-        cache_service_free(s);
+    // Clean up all cache services and records
+    cache_cleanup(NULL);
 }
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
