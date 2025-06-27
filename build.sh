@@ -106,19 +106,68 @@ echo "Building udebug..."
 cd udebug
 mkdir -p build
 cd build
+echo "Configuring udebug with cmake..."
 if cmake .. -DCMAKE_INSTALL_PREFIX="$DEPS_DIR/install" \
             -DCMAKE_C_FLAGS="$CFLAGS" \
             -DBUILD_STATIC=OFF \
             -DBUILD_SHARED_LIBS=ON; then
-    make -j$(nproc)
-    make install
-    echo "udebug built successfully"
-    UDEBUG_AVAILABLE=1
+    echo "Building udebug..."
+    if make -j$(nproc); then
+        echo "Installing udebug..."
+        if make install; then
+            # Verify that udebug.h was installed
+            if [ -f "$DEPS_DIR/install/include/udebug.h" ]; then
+                echo "udebug built and installed successfully"
+                UDEBUG_AVAILABLE=1
+            else
+                echo "udebug built but header not found at $DEPS_DIR/install/include/udebug.h"
+                ls -la "$DEPS_DIR/install/include/" || echo "Include directory doesn't exist"
+                UDEBUG_AVAILABLE=0
+            fi
+        else
+            echo "udebug make install failed"
+            UDEBUG_AVAILABLE=0
+        fi
+    else
+        echo "udebug make failed"
+        UDEBUG_AVAILABLE=0
+    fi
 else
-    echo "udebug build failed, will try to build mdnsd without it"
+    echo "udebug cmake configuration failed"
     UDEBUG_AVAILABLE=0
 fi
 cd "$DEPS_DIR"
+
+# If udebug failed to build, try to create a minimal stub header
+if [ "$UDEBUG_AVAILABLE" = "0" ]; then
+    echo "Creating minimal udebug.h stub since udebug build failed..."
+    mkdir -p "$DEPS_DIR/install/include"
+    cat > "$DEPS_DIR/install/include/udebug.h" << 'EOF'
+#ifndef __UDEBUG_H
+#define __UDEBUG_H
+
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+
+// Minimal udebug stub for compilation
+struct udebug {
+    int dummy;
+};
+
+struct udebug_buf {
+    int dummy;
+};
+
+// Stub functions that do nothing
+static inline void udebug_init(struct udebug *ctx) { (void)ctx; }
+static inline void udebug_auto_connect(struct udebug *ctx, const char *path) { (void)ctx; (void)path; }
+static inline void udebug_free(struct udebug *ctx) { (void)ctx; }
+
+#endif
+EOF
+    echo "Created minimal udebug.h stub"
+fi
 
 # Go back to source directory
 cd ..
@@ -134,6 +183,15 @@ export CFLAGS="$CFLAGS -std=gnu99"
 export CFLAGS="$CFLAGS -I$DEPS_DIR/install/include"
 export LDFLAGS="$LDFLAGS -L$DEPS_DIR/install/lib"
 export PKG_CONFIG_PATH="$DEPS_DIR/install/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+
+# Verify that udebug.h is now available
+echo "Checking for udebug.h availability..."
+if [ -f "$DEPS_DIR/install/include/udebug.h" ]; then
+    echo "✓ udebug.h found at $DEPS_DIR/install/include/udebug.h"
+else
+    echo "✗ udebug.h still not found - this will likely cause compilation to fail"
+    ls -la "$DEPS_DIR/install/include/" || echo "Include directory doesn't exist"
+fi
 
 echo "Compiling mdnsd source files..."
 
@@ -170,7 +228,7 @@ if [ "$UDEBUG_AVAILABLE" = "1" ]; then
     LINK_LIBS="$LINK_LIBS -ludebug"
     echo "Including udebug in link"
 else
-    echo "Building without udebug"
+    echo "Building without udebug library (using stub header)"
 fi
 
 $CC $CFLAGS $LIB_FUZZING_ENGINE mdnsd-fuzz.o \
