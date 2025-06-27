@@ -56,7 +56,7 @@ export PKG_CONFIG_PATH="$DEPS_DIR/install/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_
 
 echo "Compiling mdnsd source files..."
 
-# List of source files to compile (excluding main.c as we have our own fuzzer entry point)
+
 SOURCE_FILES=(
     "cache.c"
     "dns.c" 
