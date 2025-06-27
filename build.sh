@@ -39,6 +39,49 @@ make -j$(nproc)
 make install
 cd "$DEPS_DIR"
 
+# Download and build libubus (required dependency for mdnsd)
+if [ ! -d "ubus" ]; then
+    echo "Downloading ubus..."
+    git clone https://github.com/openwrt/ubus.git
+    cd ubus
+    # Remove unnecessary components
+    rm -rf tests examples lua
+    cd ..
+fi
+
+cd ubus
+mkdir -p build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX="$DEPS_DIR/install" \
+         -DCMAKE_C_FLAGS="$CFLAGS" \
+         -DBUILD_LUA=OFF \
+         -DBUILD_EXAMPLES=OFF \
+         -DBUILD_TESTS=OFF \
+         -DBUILD_STATIC=OFF \
+         -DBUILD_SHARED_LIBS=ON
+make -j$(nproc)
+make install
+cd "$DEPS_DIR"
+
+# Download and build udebug (OpenWrt debug library)
+if [ ! -d "udebug" ]; then
+    echo "Downloading udebug..."
+    git clone https://github.com/openwrt/udebug.git
+    cd udebug
+    cd ..
+fi
+
+cd udebug
+mkdir -p build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX="$DEPS_DIR/install" \
+         -DCMAKE_C_FLAGS="$CFLAGS" \
+         -DBUILD_STATIC=OFF \
+         -DBUILD_SHARED_LIBS=ON
+make -j$(nproc)
+make install
+cd "$DEPS_DIR"
+
 # Go back to source directory
 cd ..
 
@@ -48,14 +91,13 @@ cd ..
 : "${PKG_CONFIG_PATH:=}"
 : "${LIB_FUZZING_ENGINE:=-fsanitize=fuzzer}"
 
-# Add required flags for the build
-export CFLAGS="$CFLAGS -D_GNU_SOURCE -std=gnu99"
+# Add required flags for the build (remove _GNU_SOURCE since source files already define it)
+export CFLAGS="$CFLAGS -std=gnu99"
 export CFLAGS="$CFLAGS -I$DEPS_DIR/install/include"
 export LDFLAGS="$LDFLAGS -L$DEPS_DIR/install/lib"
 export PKG_CONFIG_PATH="$DEPS_DIR/install/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 
 echo "Compiling mdnsd source files..."
-
 
 SOURCE_FILES=(
     "cache.c"
@@ -84,10 +126,10 @@ echo "Compiling fuzzer..."
 $CC $CFLAGS -c mdnsd-fuzz.c -o mdnsd-fuzz.o
 
 echo "Linking fuzzer..."
-# Link the fuzzer with all components
+# Link the fuzzer with all components and required libraries
 $CC $CFLAGS $LIB_FUZZING_ENGINE mdnsd-fuzz.o \
     "${OBJECT_FILES[@]}" \
-    $LDFLAGS -lubox -ljson-c \
+    $LDFLAGS -lubox -lubus -lblobmsg_json -ljson-c -ludebug -lresolv \
     -o $OUT/mdnsd_fuzzer
 
 # Set correct rpath for OSS-Fuzz
@@ -100,12 +142,14 @@ echo "Finding and copying shared library dependencies..."
 # Create lib directory
 mkdir -p "$OUT/lib"
 
-# First, copy libubox from our custom installation
-echo "Copying libubox from custom installation..."
-if [ -f "$DEPS_DIR/install/lib/libubox.so" ]; then
-    cp "$DEPS_DIR/install/lib/libubox.so"* "$OUT/lib/" 2>/dev/null || true
-    echo "Copied libubox.so"
-fi
+# Copy libraries from our custom installation
+echo "Copying libraries from custom installation..."
+for lib in libubox.so libubus.so libblobmsg_json.so libudebug.so; do
+    if [ -f "$DEPS_DIR/install/lib/$lib" ]; then
+        cp "$DEPS_DIR/install/lib/$lib"* "$OUT/lib/" 2>/dev/null || true
+        echo "Copied $lib"
+    fi
+done
 
 # Copy other dependencies
 copy_library_deps() {
@@ -123,7 +167,7 @@ copy_library_deps() {
                 lib_name=$(basename "$lib_path")
                 # Skip system libraries that are always available
                 if [[ ! "$lib_name" =~ ^(ld-linux|libc\.so|libm\.so|libpthread\.so|libdl\.so|librt\.so|libresolv\.so) ]]; then
-                    if [[ "$lib_name" =~ ^(libjson-c|libubox) ]]; then
+                    if [[ "$lib_name" =~ ^(libjson-c) ]]; then
                         echo "Copying $lib_name from $lib_path"
                         cp "$lib_path" "$out_lib/" 2>/dev/null || true
                     fi
@@ -134,7 +178,6 @@ copy_library_deps() {
 }
 
 copy_library_deps "$OUT/mdnsd_fuzzer" "$OUT/lib"
-
 
 
 echo "Verifying fuzzer binary..."
