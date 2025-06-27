@@ -81,18 +81,23 @@ if [ ! -d "udebug" ]; then
     echo "Downloading udebug..."
     git clone https://github.com/openwrt/udebug.git
     cd udebug
-    # Remove unnecessary components and ucode-related files
+    # Remove unnecessary components
     rm -rf tests examples lua
-    rm -f lib-ucode.c  # Remove ucode support to avoid dependency
-    # Patch CMakeLists.txt to remove ucode references and examples/lua
+    # Remove ucode support to avoid dependency (if file exists)
+    rm -f lib-ucode.c  
+    # More careful patching of CMakeLists.txt
     if [ -f "CMakeLists.txt" ]; then
         cp CMakeLists.txt CMakeLists.txt.bak
-        grep -v "ADD_SUBDIRECTORY(examples)" CMakeLists.txt.bak | \
-        grep -v "ADD_SUBDIRECTORY(lua)" | \
-        grep -v "add_subdirectory(examples)" | \
-        grep -v "add_subdirectory(lua)" | \
-        grep -v "lib-ucode.c" | \
-        grep -v "ucode" > CMakeLists.txt || cp CMakeLists.txt.bak CMakeLists.txt
+        # Only remove specific lines that reference lib-ucode.c or ucode dependencies
+        sed -i '/lib-ucode\.c/d' CMakeLists.txt || true
+        sed -i '/FIND_PATH.*ucode/d' CMakeLists.txt || true
+        sed -i '/FIND_LIBRARY.*ucode/d' CMakeLists.txt || true
+        sed -i '/ucode_include_dir/d' CMakeLists.txt || true
+        # Remove examples and lua references if they exist
+        sed -i '/ADD_SUBDIRECTORY(examples)/d' CMakeLists.txt || true
+        sed -i '/ADD_SUBDIRECTORY(lua)/d' CMakeLists.txt || true
+        sed -i '/add_subdirectory(examples)/d' CMakeLists.txt || true
+        sed -i '/add_subdirectory(lua)/d' CMakeLists.txt || true
     fi
     cd ..
 fi
@@ -101,12 +106,18 @@ echo "Building udebug..."
 cd udebug
 mkdir -p build
 cd build
-cmake .. -DCMAKE_INSTALL_PREFIX="$DEPS_DIR/install" \
-         -DCMAKE_C_FLAGS="$CFLAGS" \
-         -DBUILD_STATIC=OFF \
-         -DBUILD_SHARED_LIBS=ON
-make -j$(nproc)
-make install
+if cmake .. -DCMAKE_INSTALL_PREFIX="$DEPS_DIR/install" \
+            -DCMAKE_C_FLAGS="$CFLAGS" \
+            -DBUILD_STATIC=OFF \
+            -DBUILD_SHARED_LIBS=ON; then
+    make -j$(nproc)
+    make install
+    echo "udebug built successfully"
+    UDEBUG_AVAILABLE=1
+else
+    echo "udebug build failed, will try to build mdnsd without it"
+    UDEBUG_AVAILABLE=0
+fi
 cd "$DEPS_DIR"
 
 # Go back to source directory
@@ -154,9 +165,17 @@ $CC $CFLAGS -c mdnsd-fuzz.c -o mdnsd-fuzz.o
 
 echo "Linking fuzzer..."
 # Link the fuzzer with all components and required libraries
+LINK_LIBS="-lubox -lubus -lblobmsg_json -ljson-c -lresolv"
+if [ "$UDEBUG_AVAILABLE" = "1" ]; then
+    LINK_LIBS="$LINK_LIBS -ludebug"
+    echo "Including udebug in link"
+else
+    echo "Building without udebug"
+fi
+
 $CC $CFLAGS $LIB_FUZZING_ENGINE mdnsd-fuzz.o \
     "${OBJECT_FILES[@]}" \
-    $LDFLAGS -lubox -lubus -lblobmsg_json -ljson-c -ludebug -lresolv \
+    $LDFLAGS $LINK_LIBS \
     -o $OUT/mdnsd_fuzzer
 
 # Set correct rpath for OSS-Fuzz
@@ -171,7 +190,12 @@ mkdir -p "$OUT/lib"
 
 # Copy libraries from our custom installation
 echo "Copying libraries from custom installation..."
-for lib in libubox.so libubus.so libblobmsg_json.so libudebug.so; do
+COPY_LIBS="libubox.so libubus.so libblobmsg_json.so"
+if [ "$UDEBUG_AVAILABLE" = "1" ]; then
+    COPY_LIBS="$COPY_LIBS libudebug.so"
+fi
+
+for lib in $COPY_LIBS; do
     if [ -f "$DEPS_DIR/install/lib/$lib" ]; then
         cp "$DEPS_DIR/install/lib/$lib"* "$OUT/lib/" 2>/dev/null || true
         echo "Copied $lib"
