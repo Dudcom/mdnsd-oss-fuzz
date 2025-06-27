@@ -19,8 +19,9 @@
 
 #define DBG(level, fmt, ...) do { \
 	umdns_udebug_printf("[%d] [%s:%d] " fmt, level, __func__, __LINE__, ## __VA_ARGS__); \
-	if (debug >= level) \
-		//fprintf(stderr, "mdnsd: %s (%d): " fmt, __func__, __LINE__, ## __VA_ARGS__); \
+	if (debug >= level) { \
+		/* fprintf(stderr, "mdnsd: %s (%d): " fmt, __func__, __LINE__, ## __VA_ARGS__); */ \
+	} \
 	} while (0)
 
 #define MDNS_BUF_LEN	(8 * 1024)
