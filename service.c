@@ -110,7 +110,7 @@ service_timeout(struct service *s)
 	time_t t = monotonic_time();
 
 	if (t - s->t <= TOUT_LOOKUP) {
-		DBG(2, "t=%" PRId64 ", s->t=%" PRId64 ", t - s->t = %" PRId64 "\n", (int64_t)t, (int64_t)s->t, (int64_t)(t - s->t));
+		//DBG(2, "t=%" PRId64 ", s->t=%" PRId64 ", t - s->t = %" PRId64 "\n", (int64_t)t, (int64_t)s->t, (int64_t)(t - s->t));
 		return 0;
 	}
 

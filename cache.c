@@ -53,7 +53,7 @@ AVL_TREE(records, avl_strcasecmp, true, NULL);
 static void
 cache_record_free(struct cache_record *r)
 {
-	DBG(2, "%s %s\n", dns_type_string(r->type), r->record);
+	//DBG(2, "%s %s\n", dns_type_string(r->type), r->record);
 	avl_delete(&records, &r->avl);
 	free(r);
 }
@@ -61,7 +61,7 @@ cache_record_free(struct cache_record *r)
 static void
 cache_service_free(struct cache_service *s)
 {
-	DBG(2, "%s\n", s->entry);
+	//DBG(2, "%s\n", s->entry);
 	avl_delete(&services, &s->avl);
 	free(s);
 }
@@ -281,7 +281,7 @@ void cache_answer(struct interface *iface, struct sockaddr *from, uint8_t *base,
 			return;
 		}
 
-		DBG(1, "A -> %s %s %s ttl:%d\n", dns_type_string(a->type), name, rdata_buffer, a->ttl);
+		//DBG(1, "A -> %s %s %s ttl:%d\n", dns_type_string(a->type), name, rdata_buffer, a->ttl);
 
 		rdlength = strlen(rdata_buffer);
 
@@ -349,14 +349,14 @@ void cache_answer(struct interface *iface, struct sockaddr *from, uint8_t *base,
 	r = cache_record_find(name, a->type, port, dlen, rdata);
 	if (r) {
 		if (!a->ttl) {
-			DBG(1, "D -> %s %s ttl:%d\n", dns_type_string(r->type), r->record, r->ttl);
+			//DBG(1, "D -> %s %s ttl:%d\n", dns_type_string(r->type), r->record, r->ttl);
 			r->time = now + 1 - r->ttl;
 			r->refresh = 100;
 		} else {
 			r->ttl = a->ttl;
 			r->time = now;
 			r->refresh = 50;
-			DBG(1, "A -> %s %s ttl:%d\n", dns_type_string(r->type), r->record, r->ttl);
+			//DBG(1, "A -> %s %s ttl:%d\n", dns_type_string(r->type), r->record, r->ttl);
 		}
 		return;
 	}
@@ -391,7 +391,7 @@ void cache_answer(struct interface *iface, struct sockaddr *from, uint8_t *base,
 	if (avl_insert(&records, &r->avl))
 		free(r);
 	else
-		DBG(1, "A -> %s %s ttl:%d\n", dns_type_string(r->type), r->record, r->ttl);
+		//DBG(1, "A -> %s %s ttl:%d\n", dns_type_string(r->type), r->record, r->ttl);
 }
 
 void

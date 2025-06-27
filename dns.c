@@ -145,7 +145,7 @@ bool dns_packet_question(const char *name, int type)
 	memset(q, 0, sizeof(*q));
 	q->class = cpu_to_be16(1);
 	q->type = cpu_to_be16(type);
-	DBG(1, "Q <- %s %s\n", dns_type_string(type), name);
+	//DBG(1, "Q <- %s %s\n", dns_type_string(type), name);
 
 	return true;
 }
@@ -163,7 +163,7 @@ void dns_packet_answer(const char *name, int type, const uint8_t *rdata, uint16_
 	a->ttl = cpu_to_be32(ttl);
 	a->rdlength = cpu_to_be16(rdlength);
 	memcpy(a + 1, rdata, rdlength);
-	DBG(1, "A <- %s %s\n", dns_type_string(be16_to_cpu(a->type)), name);
+	//DBG(1, "A <- %s %s\n", dns_type_string(be16_to_cpu(a->type)), name);
 
 	pkt.h.answers += cpu_to_be16(1);
 }
@@ -587,7 +587,7 @@ parse_question(struct interface *iface, struct sockaddr *from, char *name, struc
 			iface = interface_get(iface->name, iface->type | SOCKTYPE_BIT_UNICAST);
 	}
 
-	/* DBG(1, "Q -> %s %s\n", dns_type_string(q->type), name); */
+	/* //DBG(1, "Q -> %s %s\n", dns_type_string(q->type), name); */
 
 	switch (q->type) {
 	case TYPE_ANY:
