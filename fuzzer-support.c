@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include <stdio.h>
+#include <udebug.h>
 #include "cache.h"
 #include "util.h"
 
