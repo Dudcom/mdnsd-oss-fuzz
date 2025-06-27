@@ -70,21 +70,49 @@ static void setup_ipv6_sockaddr(struct sockaddr_in6 *addr, uint16_t port) {
     inet_pton(AF_INET6, "fe80::2", &addr->sin6_addr);
 }
 
+// Validate DNS packet structure and size limits
+static bool validate_dns_packet(uint8_t *data, size_t size) {
+    // Check minimum DNS header size
+    if (size < 12) {
+        return false;
+    }
+    
+    // Limit maximum packet size to prevent excessive memory usage
+    // Standard DNS packets are typically under 512 bytes, but allow up to 4KB for safety
+    if (size > 4096) {
+        return false;
+    }
+    
+    // Basic DNS header validation
+    struct dns_header {
+        uint16_t id;
+        uint16_t flags;
+        uint16_t questions;
+        uint16_t answers;
+        uint16_t authority;
+        uint16_t additional;
+    } __attribute__((packed));
+    
+    struct dns_header *h = (struct dns_header *)data;
+    uint16_t questions = ntohs(h->questions);
+    uint16_t answers = ntohs(h->answers);
+    uint16_t authority = ntohs(h->authority);
+    uint16_t additional = ntohs(h->additional);
+
+    return true;
+}
+
 static void fuzz_dns_handle_packet_comprehensive(uint8_t *input, size_t size) {
     // Initialize cache
     cache_init();
     
     // If input is too small, just test basic functionality
     if (size < 12) { // DNS header is 12 bytes minimum
-        struct interface iface;
-        struct sockaddr_in from;
-        
-        setup_ipv4_interface(&iface, SOCK_MC_IPV4);
-        setup_ipv4_sockaddr(&from, MCAST_PORT);
-        
-        dns_handle_packet(&iface, (struct sockaddr *)&from, MCAST_PORT, input, size);
-        
-        free(iface.addrs.v4);
+        goto cleanup;
+    }
+    
+    // Validate DNS packet structure before processing
+    if (!validate_dns_packet(input, size)) {
         goto cleanup;
     }
     

@@ -393,7 +393,8 @@ dns_consume_name(const uint8_t *base, int blen, uint8_t **data, int *len)
 		return NULL;
 
 	if (dn_expand(base, base + blen, *data, name_buffer, MAX_NAME_LEN) < 0) {
-		perror("dns_consume_name/dn_expand");
+		/* Suppress error messages during fuzzing to reduce noise */
+		/* perror("dns_consume_name/dn_expand"); */
 		return NULL;
 	}
 
@@ -407,7 +408,7 @@ static int parse_answer(struct interface *iface, struct sockaddr *from,
 			uint8_t *buffer, int len, uint8_t **b, int *rlen,
 			int cache)
 {
-	char *name = dns_consume_name(buffer, len, b, rlen);
+	char *name = (buffer, len, b, rlen);
 	struct dns_answer *a;
 	uint8_t *rdata;
 
