@@ -138,9 +138,9 @@ else
 fi
 cd "$DEPS_DIR"
 
-# If udebug failed to build, try to create a minimal stub header
+# If udebug failed to build, try to create a comprehensive stub header
 if [ "$UDEBUG_AVAILABLE" = "0" ]; then
-    echo "Creating minimal udebug.h stub since udebug build failed..."
+    echo "Creating comprehensive udebug.h stub since udebug build failed..."
     mkdir -p "$DEPS_DIR/install/include"
     cat > "$DEPS_DIR/install/include/udebug.h" << 'EOF'
 #ifndef __UDEBUG_H
@@ -149,8 +149,17 @@ if [ "$UDEBUG_AVAILABLE" = "0" ]; then
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdarg.h>
+#include <string.h>
 
-// Minimal udebug stub for compilation
+// Forward declarations
+struct ubus_context;
+struct blob_attr;
+
+// UDEBUG format constants
+#define UDEBUG_FORMAT_STRING    1
+
+// Basic udebug structures
 struct udebug {
     int dummy;
 };
@@ -159,14 +168,60 @@ struct udebug_buf {
     int dummy;
 };
 
+struct udebug_buf_meta {
+    const char *name;
+    int format;
+};
+
+// UBUS-specific udebug structures
+struct udebug_ubus_ring {
+    struct udebug_buf *buf;
+    const struct udebug_buf_meta *meta;
+    int default_entries;
+    int default_size;
+};
+
+struct udebug_ubus {
+    int dummy;
+};
+
 // Stub functions that do nothing
 static inline void udebug_init(struct udebug *ctx) { (void)ctx; }
 static inline void udebug_auto_connect(struct udebug *ctx, const char *path) { (void)ctx; (void)path; }
 static inline void udebug_free(struct udebug *ctx) { (void)ctx; }
 
+static inline bool udebug_buf_valid(struct udebug_buf *buf) { (void)buf; return false; }
+static inline void udebug_entry_init(struct udebug_buf *buf) { (void)buf; }
+static inline void udebug_entry_add(struct udebug_buf *buf) { (void)buf; }
+static inline int udebug_entry_vprintf(struct udebug_buf *buf, const char *format, va_list ap) { 
+    (void)buf; (void)format; (void)ap; return 0; 
+}
+
+// UBUS-specific stub functions
+static inline void udebug_ubus_init(struct udebug_ubus *ctx, struct ubus_context *ubus, 
+                                   const char *name, void (*config_cb)(struct udebug_ubus *, struct blob_attr *, bool)) {
+    (void)ctx; (void)ubus; (void)name; (void)config_cb;
+}
+
+static inline void udebug_ubus_apply_config(struct udebug *ctx, struct udebug_ubus_ring *rings, 
+                                           int n_rings, struct blob_attr *data, bool enabled) {
+    (void)ctx; (void)rings; (void)n_rings; (void)data; (void)enabled;
+}
+
+// strlcpy implementation for systems that don't have it (like Linux)
+static inline size_t strlcpy(char *dst, const char *src, size_t size) {
+    size_t src_len = strlen(src);
+    if (size > 0) {
+        size_t copy_len = (src_len < size - 1) ? src_len : size - 1;
+        memcpy(dst, src, copy_len);
+        dst[copy_len] = '\0';
+    }
+    return src_len;
+}
+
 #endif
 EOF
-    echo "Created minimal udebug.h stub"
+    echo "Created comprehensive udebug.h stub with strlcpy"
 fi
 
 # Go back to source directory
