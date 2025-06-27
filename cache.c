@@ -390,8 +390,6 @@ void cache_answer(struct interface *iface, struct sockaddr *from, uint8_t *base,
 
 	if (avl_insert(&records, &r->avl))
 		free(r);
-	else
-		DBG(1, "A -> %s %s ttl:%d\n", dns_type_string(r->type), r->record, r->ttl);
 }
 
 void
