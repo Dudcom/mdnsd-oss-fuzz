@@ -58,7 +58,7 @@ announce_timer(struct uloop_timeout *timeout)
 
 		case STATE_PROBE_END:
 			if (cache_host_is_known(mdns_hostname_local)) {
-				fprintf(stderr, "the host %s already exists. stopping announce service\n", mdns_hostname_local);
+				//fprintf(stderr, "the host %s already exists. stopping announce service\n", mdns_hostname_local);
 				return;
 			}
 			iface->announce_state++;

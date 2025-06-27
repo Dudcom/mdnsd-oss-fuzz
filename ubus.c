@@ -366,7 +366,7 @@ ubus_connect_handler(struct ubus_context *ctx)
 
 	ret = ubus_add_object(ctx, &umdns_object);
 	if (ret)
-		fprintf(stderr, "Failed to add object: %s\n", ubus_strerror(ret));
+		//fprintf(stderr, "Failed to add object: %s\n", ubus_strerror(ret));
 
 	udebug_ubus_init(&udebug, ctx, "umdns", umdns_udebug_config);
 }

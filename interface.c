@@ -81,7 +81,7 @@ interface_send_packet4(struct interface *iface, struct sockaddr_in *to, struct i
 	if (interface_multicast(iface)) {
 		a.sin_addr.s_addr = inet_addr(MCAST_ADDR);
 		if (to)
-			fprintf(stderr, "Ignoring IPv4 address for multicast interface\n");
+			//fprintf(stderr, "Ignoring IPv4 address for multicast interface\n");
 	} else {
 		a.sin_addr.s_addr = to->sin_addr.s_addr;
 		a.sin_port = to->sin_port;
@@ -124,7 +124,7 @@ interface_send_packet6(struct interface *iface, struct sockaddr_in6 *to, struct 
 	if (interface_multicast(iface)) {
 		inet_pton(AF_INET6, MCAST_ADDR6, &a.sin6_addr);
 		if (to)
-			fprintf(stderr, "Ignoring IPv6 address for multicast interface\n");
+			//fprintf(stderr, "Ignoring IPv6 address for multicast interface\n");
 	} else {
 		a.sin6_addr = to->sin6_addr;
 	}
@@ -136,14 +136,14 @@ int
 interface_send_packet(struct interface *iface, struct sockaddr *to, struct iovec *iov, int iov_len)
 {
 	if (!interface_multicast(iface) && !to) {
-		fprintf(stderr, "No IP address specified for unicast interface\n");
+		//fprintf(stderr, "No IP address specified for unicast interface\n");
 		errno = EINVAL;
 		return -1;
 	}
 
 	if (debug > 1) {
-		fprintf(stderr, "TX ipv%d: %s\n", interface_ipv6(iface) ? 6 : 4, iface->name);
-		fprintf(stderr, "  multicast: %d\n", interface_multicast(iface));
+		//fprintf(stderr, "TX ipv%d: %s\n", interface_ipv6(iface) ? 6 : 4, iface->name);
+		//fprintf(stderr, "  multicast: %d\n", interface_multicast(iface));
 	}
 
 	if (interface_ipv6(iface))
@@ -241,7 +241,7 @@ read_socket4(struct uloop_fd *u, unsigned int events)
 			break;
 
 		default:
-			fprintf(stderr, "unknown cmsg %x\n", cmsgptr->cmsg_type);
+			//fprintf(stderr, "unknown cmsg %x\n", cmsgptr->cmsg_type);
 			return;
 		}
 	}
@@ -256,15 +256,15 @@ read_socket4(struct uloop_fd *u, unsigned int events)
 	if (debug > 1) {
 		char buf[256];
 
-		fprintf(stderr, "RX ipv4: %s\n", iface->name);
-		fprintf(stderr, "  multicast: %d\n", interface_multicast(iface));
+		//fprintf(stderr, "RX ipv4: %s\n", iface->name);
+		//fprintf(stderr, "  multicast: %d\n", interface_multicast(iface));
 		inet_ntop(AF_INET, &from.sin_addr, buf, 256);
-		fprintf(stderr, "  src %s:%d\n", buf, ntohs(from.sin_port));
+		//fprintf(stderr, "  src %s:%d\n", buf, ntohs(from.sin_port));
 		inet_ntop(AF_INET, &inp->ipi_spec_dst, buf, 256);
-		fprintf(stderr, "  dst %s\n", buf);
+		//fprintf(stderr, "  dst %s\n", buf);
 		inet_ntop(AF_INET, &inp->ipi_addr, buf, 256);
-		fprintf(stderr, "  real %s\n", buf);
-		fprintf(stderr, "  ttl %u\n", ttl);
+		//fprintf(stderr, "  real %s\n", buf);
+		//fprintf(stderr, "  ttl %u\n", ttl);
 	}
 
 	for (size_t i = 0; i < iface->addrs.n_addr; i++) {
@@ -333,7 +333,7 @@ read_socket6(struct uloop_fd *u, unsigned int events)
 			break;
 
 		default:
-			fprintf(stderr, "unknown cmsg %x\n", cmsgptr->cmsg_type);
+			//fprintf(stderr, "unknown cmsg %x\n", cmsgptr->cmsg_type);
 			return;
 		}
 	}
@@ -348,13 +348,13 @@ read_socket6(struct uloop_fd *u, unsigned int events)
 	if (debug > 1) {
 		char buf[256];
 
-		fprintf(stderr, "RX ipv6: %s\n", iface->name);
-		fprintf(stderr, "  multicast: %d\n", interface_multicast(iface));
+		//fprintf(stderr, "RX ipv6: %s\n", iface->name);
+		//fprintf(stderr, "  multicast: %d\n", interface_multicast(iface));
 		inet_ntop(AF_INET6, &from.sin6_addr, buf, 256);
-		fprintf(stderr, "  src %s:%d\n", buf, ntohs(from.sin6_port));
+		//fprintf(stderr, "  src %s:%d\n", buf, ntohs(from.sin6_port));
 		inet_ntop(AF_INET6, &inp->ipi6_addr, buf, 256);
-		fprintf(stderr, "  dst %s\n", buf);
-		fprintf(stderr, "  ttl %u\n", ttl);
+		//fprintf(stderr, "  dst %s\n", buf);
+		//fprintf(stderr, "  ttl %u\n", ttl);
 	}
 
 	for (size_t i = 0; i < iface->addrs.n_addr; i++) {

@@ -105,7 +105,7 @@ main(int argc, char **argv)
 			if (ttl > 0)
 				announce_ttl = ttl;
 			else
-				fprintf(stderr, "invalid ttl\n");
+				//fprintf(stderr, "invalid ttl\n");
 			break;
 		case 'd':
 			debug++;

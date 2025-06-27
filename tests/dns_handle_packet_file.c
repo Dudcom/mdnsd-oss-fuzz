@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	uint8_t *buf = NULL;
 
 	if (argc != 2) {
-		fprintf(stderr, "Usage: %s <packet.bin>\n", argv[0]);
+		//fprintf(stderr, "Usage: %s <packet.bin>\n", argv[0]);
 		return -1;
 	}
 

@@ -315,7 +315,7 @@ service_load(char *path)
 			blob_for_each_attr(cur, b.head, rem)
 				service_load_blob(cur);
 		} else {
-			fprintf(stderr, "Error reading %s JSON\n", gl.gl_pathv[i]);
+			//fprintf(stderr, "Error reading %s JSON\n", gl.gl_pathv[i]);
 		}
 	}
 	globfree(&gl);

@@ -412,13 +412,13 @@ static int parse_answer(struct interface *iface, struct sockaddr *from,
 	uint8_t *rdata;
 
 	if (!name || *rlen < 0) {
-		fprintf(stderr, "dropping: bad question\n");
+		//fprintf(stderr, "dropping: bad question\n");
 		return -1;
 	}
 
 	a = dns_consume_answer(b, rlen);
 	if (!a) {
-		fprintf(stderr, "dropping: bad question\n");
+		//fprintf(stderr, "dropping: bad question\n");
 		return -1;
 	}
 
@@ -427,7 +427,7 @@ static int parse_answer(struct interface *iface, struct sockaddr *from,
 
 	rdata = *b;
 	if (a->rdlength > *rlen) {
-		fprintf(stderr, "dropping: bad question\n");
+		//fprintf(stderr, "dropping: bad question\n");
 		return -1;
 	}
 
@@ -661,7 +661,7 @@ dns_handle_packet(struct interface *iface, struct sockaddr *from, uint16_t port,
 
 	h = dns_consume_header(&b, &rlen);
 	if (!h) {
-		fprintf(stderr, "dropping: bad header\n");
+		//fprintf(stderr, "dropping: bad header\n");
 		return;
 	}
 
@@ -674,13 +674,13 @@ dns_handle_packet(struct interface *iface, struct sockaddr *from, uint16_t port,
 		struct dns_question *q;
 
 		if (!name || rlen < 0) {
-			fprintf(stderr, "dropping: bad name\n");
+			////fprintf(stderr, "dropping: bad name\n");
 			return;
 		}
 
 		q = dns_consume_question(&b, &rlen);
 		if (!q) {
-			fprintf(stderr, "dropping: bad question\n");
+			//fprintf(stderr, "dropping: bad question\n");
 			return;
 		}
 
