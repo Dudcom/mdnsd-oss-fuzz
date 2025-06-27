@@ -587,7 +587,7 @@ parse_question(struct interface *iface, struct sockaddr *from, char *name, struc
 			iface = interface_get(iface->name, iface->type | SOCKTYPE_BIT_UNICAST);
 	}
 
-	DBG(1, "Q -> %s %s\n", dns_type_string(q->type), name);
+	/* DBG(1, "Q -> %s %s\n", dns_type_string(q->type), name); */
 
 	switch (q->type) {
 	case TYPE_ANY:
