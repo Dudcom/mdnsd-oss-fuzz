@@ -277,7 +277,7 @@ void cache_answer(struct interface *iface, struct sockaddr *from, uint8_t *base,
 			return;
 
 		if (dn_expand(base, base + blen, rdata, rdata_buffer, MAX_DATA_LEN) < 0) {
-			perror("process_answer/dn_expand");
+			//perror("process_answer/dn_expand");
 			return;
 		}
 
@@ -304,7 +304,7 @@ void cache_answer(struct interface *iface, struct sockaddr *from, uint8_t *base,
 		memcpy(rdata_buffer, dsd, sizeof(*dsd));
 		if (dn_expand(base, base + blen, (const uint8_t*)&dsd[1],
 				&rdata_buffer[sizeof(*dsd)], MAX_DATA_LEN - sizeof(*dsd)) < 0) {
-			perror("process_answer/dn_expand");
+			// //perror("process_answer/dn_expand");
 			return;
 		}
 		dlen = sizeof(*dsd) + strlen(&rdata_buffer[sizeof(*dsd)]) + 1;

@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 
 	fd = fopen(argv[1], "r");
 	if (!fd) {
-		perror("unable to open input file\n");
+		//perror("unable to open input file\n");
 		return -1;
 	}
 

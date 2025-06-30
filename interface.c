@@ -223,7 +223,7 @@ read_socket4(struct uloop_fd *u, unsigned int events)
 
 	len = recvmsg(u->fd, &msg, flags);
 	if (len == -1) {
-		perror("read failed");
+		//perror("read failed");
 		return;
 	}
 	for (cmsgptr = CMSG_FIRSTHDR(&msg); cmsgptr != NULL; cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {
@@ -315,7 +315,7 @@ read_socket6(struct uloop_fd *u, unsigned int events)
 
 	len = recvmsg(u->fd, &msg, flags);
 	if (len == -1) {
-		perror("read failed");
+		//perror("read failed");
 		return;
 	}
 	for (cmsgptr = CMSG_FIRSTHDR(&msg); cmsgptr != NULL; cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {
