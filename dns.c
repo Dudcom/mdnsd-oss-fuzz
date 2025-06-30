@@ -193,7 +193,7 @@ void dns_packet_send(struct interface *iface, struct sockaddr *to, bool query, i
 	}
 
 	if (interface_send_packet(iface, to, &iov, 1) < 0)
-		//perror("failed to send answer");
+		// perror("failed to send answer");
 }
 
 static void dns_packet_broadcast(void)
@@ -394,7 +394,7 @@ dns_consume_name(const uint8_t *base, int blen, uint8_t **data, int *len)
 
 	if (dn_expand(base, base + blen, *data, name_buffer, MAX_NAME_LEN) < 0) {
 		/* Suppress error messages during fuzzing to reduce noise */
-		/* //perror("dns_consume_name/dn_expand"); */
+		/* perror("dns_consume_name/dn_expand"); */
 		return NULL;
 	}
 
