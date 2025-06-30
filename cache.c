@@ -276,8 +276,8 @@ void cache_answer(struct interface *iface, struct sockaddr *from, uint8_t *base,
 		if (a->rdlength < 2)
 			return;
 
-		if (//perror(base, base + blen, rdata, rdata_buffer, MAX_DATA_LEN) < 0) {
-			//perror("process_answer///perror");
+		if (dn_expand(base, base + blen, rdata, rdata_buffer, MAX_DATA_LEN) < 0) {
+			//perror("process_answer/dn_expand");
 			return;
 		}
 
@@ -302,9 +302,9 @@ void cache_answer(struct interface *iface, struct sockaddr *from, uint8_t *base,
 
 		port = be16_to_cpu(dsd->port);
 		memcpy(rdata_buffer, dsd, sizeof(*dsd));
-		if (//perror(base, base + blen, (const uint8_t*)&dsd[1],
+		if (dn_expand(base, base + blen, (const uint8_t*)&dsd[1],
 				&rdata_buffer[sizeof(*dsd)], MAX_DATA_LEN - sizeof(*dsd)) < 0) {
-			//perror("process_answer///perror");
+			// //perror("process_answer/dn_expand");
 			return;
 		}
 		dlen = sizeof(*dsd) + strlen(&rdata_buffer[sizeof(*dsd)]) + 1;
