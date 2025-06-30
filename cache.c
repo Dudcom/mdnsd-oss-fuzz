@@ -281,7 +281,7 @@ void cache_answer(struct interface *iface, struct sockaddr *from, uint8_t *base,
 			return;
 		}
 
-		//DBG(1, "A -> %s %s %s ttl:%d\n", dns_type_string(a->type), name, rdata_buffer, a->ttl);
+		//DBG(1, "A -> %s %s %s ttl:%d\n", dns_type_string(a->type), name, rdata_buffer, a->ttl)	;
 
 		rdlength = strlen(rdata_buffer);
 
