@@ -193,7 +193,7 @@ void dns_packet_send(struct interface *iface, struct sockaddr *to, bool query, i
 	}
 
 	if (interface_send_packet(iface, to, &iov, 1) < 0)
-		// perror("failed to send answer");
+		perror("failed to send answer");
 }
 
 static void dns_packet_broadcast(void)
